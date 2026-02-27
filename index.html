@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PulseIQ — Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Cabinet+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:    #07090f;
+  --ink2:   #0d1119;
+  --ink3:   #131a27;
+  --line:   rgba(255,255,255,0.06);
+  --lime:   #b8ff57;
+  --cyan:   #38d9f5;
+  --rose:   #ff4f6d;
+  --amber:  #ffb830;
+  --lav:    #a78bfa;
+  --snow:   #e4eaf6;
+  --fog:    #4b566b;
+  --mono:   'IBM Plex Mono', monospace;
+  --head:   'Cabinet Grotesk', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--head);background:var(--ink);color:var(--snow);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:.35;}
+
+/* DISCLAIMER MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(7,9,15,.92);z-index:900;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.modal{background:var(--ink2);border:1px solid rgba(184,255,87,.2);border-radius:16px;padding:32px;max-width:440px;width:90%;text-align:center;}
+.modal-icon{font-size:32px;margin-bottom:14px;}
+.modal h2{font-family:var(--head);font-size:18px;font-weight:800;margin-bottom:10px;}
+.modal p{font-size:12px;color:var(--fog);line-height:1.7;margin-bottom:20px;}
+.modal-accept{background:var(--lime);color:var(--ink);font-family:var(--mono);font-size:12px;font-weight:600;border:none;border-radius:20px;padding:11px 28px;cursor:pointer;width:100%;transition:opacity .15s;}
+.modal-accept:hover{opacity:.85;}
+.modal-fine{font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:10px;line-height:1.6;}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{background:var(--ink2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;}
+.sb-mark{width:30px;height:30px;background:var(--lime);border-radius:7px;display:grid;place-items:center;font-family:var(--head);font-weight:800;font-size:12px;color:var(--ink);flex-shrink:0;}
+.sb-name{font-family:var(--head);font-weight:800;font-size:16px;letter-spacing:-.2px;}
+.sb-name span{color:var(--lime);}
+
+.sb-sec{padding:16px 12px 4px;}
+.sb-lbl{font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1.5px;text-transform:uppercase;padding:0 8px;margin-bottom:5px;}
+.sb-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--fog);transition:all .18s;margin-bottom:1px;border:1px solid transparent;}
+.sb-item:hover{color:var(--snow);background:rgba(255,255,255,.04);}
+.sb-item.active{background:rgba(184,255,87,.07);border-color:rgba(184,255,87,.14);color:var(--lime);}
+.sb-item .ico{font-size:13px;width:15px;text-align:center;}
+.sb-badge{margin-left:auto;font-family:var(--mono);font-size:9px;background:rgba(184,255,87,.14);color:var(--lime);padding:2px 6px;border-radius:8px;}
+
+.sb-wl{padding:14px 12px 6px;}
+.sw-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:1px;}
+.sw-row:hover{background:rgba(255,255,255,.03);}
+.sw-t{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--snow);}
+.sw-n{font-size:10px;color:var(--fog);margin-top:1px;}
+.sw-r{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.sw-s{font-family:var(--mono);font-size:11px;font-weight:500;}
+.sw-b{width:38px;height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+.sw-bf{height:100%;border-radius:2px;}
+
+.sb-note{margin:auto 12px 14px;padding:12px;background:rgba(255,184,48,.05);border:1px solid rgba(255,184,48,.15);border-radius:10px;}
+.sb-note p{font-family:var(--mono);font-size:10px;color:var(--fog);line-height:1.6;}
+.sb-note strong{color:var(--amber);}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;border-bottom:1px solid var(--line);background:rgba(7,9,15,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:40;}
+.tb-left{display:flex;align-items:center;gap:14px;}
+.mkt-pill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--lime);background:rgba(184,255,87,.07);border:1px solid rgba(184,255,87,.14);padding:5px 10px;border-radius:20px;}
+.mkt-dot{width:6px;height:6px;background:var(--lime);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#clock{font-family:var(--mono);font-size:10px;color:var(--fog);}
+.delay-tag{font-family:var(--mono);font-size:9px;color:var(--amber);background:rgba(255,184,48,.07);border:1px solid rgba(255,184,48,.15);padding:4px 9px;border-radius:10px;}
+
+/* TAPE */
+.tape{border-bottom:1px solid var(--line);padding:6px 0;overflow:hidden;background:rgba(13,17,25,.7);}
+.tape-inner{display:flex;gap:28px;animation:scroll 28s linear infinite;width:max-content;}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;white-space:nowrap;flex-shrink:0;}
+.ti-s{color:var(--snow);font-weight:500;}
+.ti-d{color:var(--fog);}
+.ti-u{color:var(--lime);}
+.ti-dn{color:var(--rose);}
+.t-sep{color:var(--line);font-size:12px;}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;min-width:0;}
+.content{padding:22px 24px 48px;}
+
+/* TABS */
+.ptabs{display:flex;gap:2px;background:var(--ink2);border:1px solid var(--line);border-radius:9px;padding:4px;width:fit-content;margin-bottom:22px;}
+.ptab{font-family:var(--mono);font-size:11px;letter-spacing:.3px;padding:7px 15px;border-radius:6px;cursor:pointer;color:var(--fog);transition:all .18s;}
+.ptab.active{background:var(--ink3);color:var(--snow);}
+.ptab:hover:not(.active){color:var(--snow);}
+.panel{display:none;}
+.panel.active{display:block;animation:up .3s ease;}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* SEC HEADER */
+.sh{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+.sh h2{font-family:var(--head);font-size:14px;font-weight:700;}
+.stag{font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:.8px;text-transform:uppercase;background:rgba(255,255,255,.05);padding:3px 7px;border-radius:5px;}
+
+/* KPI ROW */
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:20px;}
+.kpi{background:var(--ink2);border:1px solid var(--line);border-radius:11px;padding:15px 16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.kl::before{background:linear-gradient(90deg,transparent,var(--lime),transparent);}
+.kpi.ka::before{background:linear-gradient(90deg,transparent,var(--amber),transparent);}
+.kpi.kr::before{background:linear-gradient(90deg,transparent,var(--rose),transparent);}
+.kpi.kc::before{background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.kl-lbl{font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.kl-val{font-family:var(--head);font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1;margin-bottom:3px;}
+.kl-sub{font-family:var(--mono);font-size:10px;color:var(--fog);}
+
+/* INFO BANNER */
+.info-banner{background:rgba(56,217,245,.05);border:1px solid rgba(56,217,245,.14);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;}
+.ib-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.ib-text{font-size:11px;color:var(--fog);line-height:1.6;}
+.ib-text strong{color:var(--snow);}
+
+/* SCORES TABLE */
+.sw{background:var(--ink2);border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:20px;}
+.sth{display:grid;grid-template-columns:82px 1fr 58px 140px 140px 100px;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1.2px;text-transform:uppercase;}
+.str{display:grid;grid-template-columns:82px 1fr 58px 140px 140px 100px;gap:8px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.025);align-items:center;cursor:pointer;transition:background .15s;}
+.str:last-child{border-bottom:none;}
+.str:hover{background:rgba(255,255,255,.02);}
+
+.t-cell{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cyan);}
+.co-cell{font-size:12px;font-weight:500;}
+.co-sub{font-size:10px;color:var(--fog);margin-top:2px;}
+
+.sn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:25px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:600;}
+.sh-sn{background:rgba(184,255,87,.1);color:var(--lime);}
+.sm-sn{background:rgba(255,184,48,.1);color:var(--amber);}
+.sl-sn{background:rgba(255,79,109,.1);color:var(--rose);}
+.sn-sn{background:rgba(75,86,107,.15);color:var(--fog);}
+
+/* predicted range */
+.pr{display:flex;flex-direction:column;gap:3px;}
+.pr-row{font-family:var(--mono);font-size:11px;}
+.pr-lo{color:var(--fog);}
+.pr-hi{color:var(--snow);}
+.pr-sep{color:rgba(255,255,255,.15);margin:0 5px;}
+.pr-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.pr-fill{height:100%;border-radius:2px;}
+
+/* verdict */
+.verdict{display:flex;align-items:center;gap:6px;}
+.vd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.vd-w{background:var(--lime);}
+.vd-h{background:var(--amber);}
+.vd-a{background:var(--fog);}
+.vl{font-family:var(--mono);font-size:11px;}
+.vl-w{color:var(--lime);}
+.vl-h{color:var(--amber);}
+.vl-a{color:var(--fog);}
+
+/* signal chip */
+.chip{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:9px;display:inline-block;}
+.ch-b{background:rgba(184,255,87,.08);color:var(--lime);border:1px solid rgba(184,255,87,.16);}
+.ch-w{background:rgba(255,184,48,.08);color:var(--amber);border:1px solid rgba(255,184,48,.16);}
+.ch-n{background:transparent;color:var(--fog);border:1px solid var(--line);}
+
+/* BOTTOM GRID */
+.bg2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:20px;}
+
+/* HEATMAP */
+.hm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.hm-cell{padding:12px 10px;border-radius:9px;cursor:pointer;border:1px solid rgba(255,255,255,.05);transition:transform .14s;}
+.hm-cell:hover{transform:translateY(-2px);}
+.hm-name{font-size:10px;font-weight:600;margin-bottom:5px;opacity:.85;}
+.hm-score{font-family:var(--head);font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:1px;}
+.hm-chg{font-family:var(--mono);font-size:9px;opacity:.65;}
+
+/* NEWS */
+.nf{background:var(--ink2);border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+.ni{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.025);cursor:pointer;transition:background .15s;}
+.ni:last-child{border-bottom:none;}
+.ni:hover{background:rgba(255,255,255,.02);}
+.ni-m{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+.ni-s{font-family:var(--mono);font-size:9px;color:var(--lav);letter-spacing:.5px;text-transform:uppercase;}
+.ni-t{font-family:var(--mono);font-size:9px;color:var(--fog);}
+.ni-tag{margin-left:auto;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:7px;}
+.nt-b{background:rgba(184,255,87,.1);color:var(--lime);}
+.nt-r{background:rgba(255,79,109,.1);color:var(--rose);}
+.nt-n{background:rgba(75,86,107,.12);color:var(--fog);}
+.ni-hl{font-size:11px;line-height:1.5;}
+.ni-tks{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.ni-tk{font-family:var(--mono);font-size:9px;color:var(--fog);background:rgba(255,255,255,.05);padding:2px 5px;border-radius:4px;}
+
+/* MACRO */
+.mac-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+.mc{background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:13px 15px;}
+.mc-l{font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.mc-v{font-family:var(--head);font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:2px;}
+.mc-t{font-family:var(--mono);font-size:10px;}
+.tu{color:var(--lime);}
+.td{color:var(--rose);}
+.tf{color:var(--fog);}
+
+/* ACCURACY PANEL */
+.ak-row{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:20px;}
+.ak{background:var(--ink2);border:1px solid var(--line);border-radius:11px;padding:16px;}
+.ak-l{font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;}
+.ak-v{font-family:var(--head);font-size:26px;font-weight:800;letter-spacing:-.6px;line-height:1;margin-bottom:4px;}
+.ak-s{font-family:var(--mono);font-size:10px;color:var(--fog);margin-bottom:7px;}
+.prog{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.pf{height:100%;border-radius:2px;transition:width 1.4s cubic-bezier(.4,0,.2,1);}
+.spark{display:flex;align-items:flex-end;gap:3px;height:26px;margin-top:6px;}
+.sp-b{flex:1;border-radius:2px 2px 0 0;min-width:4px;}
+
+.leg-row{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--fog);}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+.af-row{display:flex;align-items:center;gap:7px;margin-bottom:14px;flex-wrap:wrap;}
+.afp{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--line);color:var(--fog);transition:all .18s;}
+.afp.active,.afp:hover{border-color:rgba(184,255,87,.28);color:var(--lime);background:rgba(184,255,87,.05);}
+.asrch{margin-left:auto;background:var(--ink2);border:1px solid var(--line);color:var(--snow);font-family:var(--mono);font-size:11px;padding:6px 13px;border-radius:20px;outline:none;width:150px;transition:border-color .18s;}
+.asrch:focus{border-color:rgba(184,255,87,.28);}
+.asrch::placeholder{color:var(--fog);}
+
+.atw{background:var(--ink2);border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+.ath{display:grid;grid-template-columns:80px 90px 52px 145px 145px 95px 95px;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1.1px;text-transform:uppercase;}
+.atr{display:grid;grid-template-columns:80px 90px 52px 145px 145px 95px 95px;gap:6px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.025);align-items:center;cursor:pointer;transition:background .15s;border-radius:0;}
+.atr:last-child{border-bottom:none;}
+.atr:hover{background:rgba(255,255,255,.02);}
+.ad{font-family:var(--mono);font-size:10px;color:var(--fog);}
+.at{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cyan);}
+.ac{font-size:9px;color:var(--fog);margin-top:1px;}
+.ahl{display:flex;flex-direction:column;gap:2px;}
+.ah{font-family:var(--mono);font-size:11px;color:var(--lime);}
+.al{font-family:var(--mono);font-size:11px;color:var(--rose);}
+.ah-m{color:var(--rose)!important;}
+.al-m{color:var(--rose)!important;}
+.rw{display:flex;align-items:center;gap:5px;}
+.rd{width:7px;height:7px;border-radius:50%;}
+.rl{font-family:var(--mono);font-size:10px;}
+.rh{color:var(--lime);}
+.rp{color:var(--amber);}
+.rm{color:var(--rose);}
+.da{display:flex;flex-direction:column;gap:2px;}
+.da-h{font-family:var(--mono);font-size:11px;font-weight:500;}
+.da-d{font-family:var(--mono);font-size:9px;color:var(--fog);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px;}
+.disc{text-align:center;padding:18px 0 0;font-family:var(--mono);font-size:10px;color:var(--fog);border-top:1px solid var(--line);line-height:1.8;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<!-- DISCLAIMER MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-icon">📊</div>
+    <h2>Before You Continue</h2>
+    <p>PulseIQ is a <strong>free market intelligence tool</strong> that scores stocks and ETFs based on technical indicators, news sentiment, and macro data.<br><br>
+    All scores are generated from publicly available, 15-minute delayed data. This is <strong>not financial advice</strong> and should not be used as the sole basis for any investment decision.</p>
+    <button class="modal-accept" onclick="document.getElementById('modal').style.display='none'">I Understand — Continue</button>
+    <div class="modal-fine">Data delayed 15 min · For informational purposes only · Not affiliated with any exchange</div>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-mark">IQ</div>
+    <div class="sb-name">Pulse<span>IQ</span></div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Views</div>
+    <div class="sb-item active" data-tab="overview"><span class="ico">📊</span> Overview <span class="sb-badge">Live</span></div>
+    <div class="sb-item" data-tab="accuracy"><span class="ico">🎯</span> Accuracy Log</div>
+  </div>
+  <div class="sb-wl">
+    <div class="sb-lbl" style="padding:0 8px;margin-bottom:8px;font-family:var(--mono);font-size:9px;color:var(--fog);letter-spacing:1.5px;text-transform:uppercase;">Tracked Today</div>
+    <div class="sw-row"><div><div class="sw-t">NVDA</div><div class="sw-n">NVIDIA</div></div><div class="sw-r"><div class="sw-s" style="color:var(--lime)">82</div><div class="sw-b"><div class="sw-bf" style="width:82%;background:var(--lime)"></div></div></div></div>
+    <div class="sw-row"><div><div class="sw-t">MSFT</div><div class="sw-n">Microsoft</div></div><div class="sw-r"><div class="sw-s" style="color:var(--lime)">77</div><div class="sw-b"><div class="sw-bf" style="width:77%;background:var(--lime)"></div></div></div></div>
+    <div class="sw-row"><div><div class="sw-t">AAPL</div><div class="sw-n">Apple</div></div><div class="sw-r"><div class="sw-s" style="color:var(--amber)">71</div><div class="sw-b"><div class="sw-bf" style="width:71%;background:var(--amber)"></div></div></div></div>
+    <div class="sw-row"><div><div class="sw-t">SPY</div><div class="sw-n">S&P 500 ETF</div></div><div class="sw-r"><div class="sw-s" style="color:var(--amber)">65</div><div class="sw-b"><div class="sw-bf" style="width:65%;background:var(--amber)"></div></div></div></div>
+    <div class="sw-row"><div><div class="sw-t">QQQ</div><div class="sw-n">Nasdaq ETF</div></div><div class="sw-r"><div class="sw-s" style="color:var(--amber)">63</div><div class="sw-b"><div class="sw-bf" style="width:63%;background:var(--amber)"></div></div></div></div>
+    <div class="sw-row"><div><div class="sw-t">TSLA</div><div class="sw-n">Tesla</div></div><div class="sw-r"><div class="sw-s" style="color:var(--fog)">49</div><div class="sw-b"><div class="sw-bf" style="width:49%;background:var(--fog)"></div></div></div></div>
+  </div>
+  <div class="sb-note">
+    <p><strong>Data:</strong> Yahoo Finance · 15-min delayed<br><strong>Scores:</strong> Updated every 15 min<br><strong>Cost:</strong> Free · No signup needed</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="mkt-pill"><div class="mkt-dot"></div>NYSE OPEN</div>
+      <div id="clock"></div>
+      <div class="delay-tag">⏱ 15-min delayed</div>
+    </div>
+  </div>
+
+  <!-- TAPE -->
+  <div class="tape">
+    <div class="tape-inner">
+      <div class="ti"><span class="ti-s">NVDA</span><span class="ti-d">Score</span><span class="ti-u">82↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">MSFT</span><span class="ti-d">Score</span><span class="ti-u">77↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">AAPL</span><span class="ti-d">Score</span><span class="ti-u">71↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">SPY</span><span class="ti-d">Score</span><span class="ti-d">65→</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">QQQ</span><span class="ti-d">Score</span><span class="ti-d">63→</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">TSLA</span><span class="ti-d">Score</span><span class="ti-dn">49↓</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">AMZN</span><span class="ti-d">Score</span><span class="ti-u">68↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">META</span><span class="ti-d">Score</span><span class="ti-u">72↑</span></div><span class="t-sep">·</span>
+      <!-- dupe -->
+      <div class="ti"><span class="ti-s">NVDA</span><span class="ti-d">Score</span><span class="ti-u">82↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">MSFT</span><span class="ti-d">Score</span><span class="ti-u">77↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">AAPL</span><span class="ti-d">Score</span><span class="ti-u">71↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">SPY</span><span class="ti-d">Score</span><span class="ti-d">65→</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">QQQ</span><span class="ti-d">Score</span><span class="ti-d">63→</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">TSLA</span><span class="ti-d">Score</span><span class="ti-dn">49↓</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">AMZN</span><span class="ti-d">Score</span><span class="ti-u">68↑</span></div><span class="t-sep">·</span>
+      <div class="ti"><span class="ti-s">META</span><span class="ti-d">Score</span><span class="ti-u">72↑</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="ptabs">
+      <div class="ptab active" data-tab="overview">Overview</div>
+      <div class="ptab" data-tab="accuracy">Accuracy Log</div>
+    </div>
+
+    <!-- ═══ OVERVIEW ═══ -->
+    <div class="panel active" id="panel-overview">
+
+      <div class="krow">
+        <div class="kpi kl"><div class="kl-lbl">Market Momentum</div><div class="kl-val" style="color:var(--lime)">68/100</div><div class="kl-sub">Bullish bias · +4 today</div></div>
+        <div class="kpi ka"><div class="kl-lbl">News Sentiment</div><div class="kl-val" style="color:var(--amber)">+0.41</div><div class="kl-sub">Positive lean · last 4h</div></div>
+        <div class="kpi kr"><div class="kl-lbl">Geo Risk</div><div class="kl-val" style="color:var(--amber)">44/100</div><div class="kl-sub">Moderate elevated</div></div>
+        <div class="kpi kc"><div class="kl-lbl">7-Day Accuracy</div><div class="kl-val" style="color:var(--lime)">71%</div><div class="kl-sub">Range hit rate</div></div>
+      </div>
+
+      <div class="info-banner">
+        <div class="ib-icon">ℹ️</div>
+        <div class="ib-text">
+          <strong>How scores work:</strong> Each stock gets a 0–100 score combining technical momentum (RSI, MACD, EMA), news sentiment, earnings quality, and macro conditions. Scores above 70 = strong momentum, 50–70 = neutral watch, below 50 = weak. <strong>Predicted ranges are derived from volatility bands — not price targets.</strong>
+        </div>
+      </div>
+
+      <!-- SCORES TABLE -->
+      <div class="sh"><h2>Today's Scores</h2><span class="stag">Feb 27, 2026</span><span class="stag">Updated 14:45 EST</span></div>
+      <div class="sw">
+        <div class="sth"><span>Ticker</span><span>Name</span><span>Score</span><span>Predicted Range</span><span>Verdict</span><span>Signal</span></div>
+
+        <div class="str">
+          <div class="t-cell">NVDA</div>
+          <div><div class="co-cell">NVIDIA Corp.</div><div class="co-sub">Semiconductors</div></div>
+          <div><span class="sn sh-sn">82</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$875</span><span class="pr-sep">—</span><span class="pr-hi">$910</span></div><div class="pr-bar"><div class="pr-fill" style="width:82%;background:var(--lime);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-w"></div><span class="vl vl-w">Watch Closely</span></div>
+          <div><span class="chip ch-b">⚡ Breakout</span></div>
+        </div>
+
+        <div class="str">
+          <div class="t-cell">MSFT</div>
+          <div><div class="co-cell">Microsoft Corp.</div><div class="co-sub">Software</div></div>
+          <div><span class="sn sh-sn">77</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$408</span><span class="pr-sep">—</span><span class="pr-hi">$422</span></div><div class="pr-bar"><div class="pr-fill" style="width:77%;background:var(--lime);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-w"></div><span class="vl vl-w">Watch Closely</span></div>
+          <div><span class="chip ch-w">👁 Monitor</span></div>
+        </div>
+
+        <div class="str">
+          <div class="t-cell">AAPL</div>
+          <div><div class="co-cell">Apple Inc.</div><div class="co-sub">Consumer Tech</div></div>
+          <div><span class="sn sm-sn">71</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$185</span><span class="pr-sep">—</span><span class="pr-hi">$193</span></div><div class="pr-bar"><div class="pr-fill" style="width:71%;background:var(--amber);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-h"></div><span class="vl vl-h">Moderate Interest</span></div>
+          <div><span class="chip ch-w">👁 Monitor</span></div>
+        </div>
+
+        <div class="str">
+          <div class="t-cell">SPY</div>
+          <div><div class="co-cell">SPDR S&P 500 ETF</div><div class="co-sub">Index ETF</div></div>
+          <div><span class="sn sm-sn">65</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$508</span><span class="pr-sep">—</span><span class="pr-hi">$517</span></div><div class="pr-bar"><div class="pr-fill" style="width:65%;background:var(--amber);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-h"></div><span class="vl vl-h">Moderate Interest</span></div>
+          <div><span class="chip ch-n">Neutral</span></div>
+        </div>
+
+        <div class="str">
+          <div class="t-cell">QQQ</div>
+          <div><div class="co-cell">Invesco Nasdaq ETF</div><div class="co-sub">Index ETF</div></div>
+          <div><span class="sn sm-sn">63</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$437</span><span class="pr-sep">—</span><span class="pr-hi">$446</span></div><div class="pr-bar"><div class="pr-fill" style="width:63%;background:var(--amber);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-h"></div><span class="vl vl-h">Moderate Interest</span></div>
+          <div><span class="chip ch-n">Neutral</span></div>
+        </div>
+
+        <div class="str">
+          <div class="t-cell">TSLA</div>
+          <div><div class="co-cell">Tesla Inc.</div><div class="co-sub">EV / Clean Energy</div></div>
+          <div><span class="sn sn-sn">49</span></div>
+          <div class="pr"><div class="pr-row"><span class="pr-lo">$192</span><span class="pr-sep">—</span><span class="pr-hi">$204</span></div><div class="pr-bar"><div class="pr-fill" style="width:49%;background:var(--fog);opacity:.6"></div></div></div>
+          <div class="verdict"><div class="vd vd-a"></div><span class="vl vl-a">Low Interest</span></div>
+          <div><span class="chip ch-n">Weak</span></div>
+        </div>
+
+      </div>
+
+      <!-- HEATMAP + NEWS -->
+      <div class="bg2">
+        <div>
+          <div class="sh"><h2>Sector Heatmap</h2><span class="stag">Strength Score</span></div>
+          <div class="hm-grid">
+            <div class="hm-cell" style="background:rgba(184,255,87,.13)"><div class="hm-name">Technology</div><div class="hm-score" style="color:var(--lime)">78</div><div class="hm-chg" style="color:var(--lime)">+2.1%</div></div>
+            <div class="hm-cell" style="background:rgba(184,255,87,.09)"><div class="hm-name">Energy</div><div class="hm-score" style="color:var(--lime)">71</div><div class="hm-chg" style="color:var(--lime)">+1.4%</div></div>
+            <div class="hm-cell" style="background:rgba(56,217,245,.07)"><div class="hm-name">Industrials</div><div class="hm-score" style="color:var(--cyan)">68</div><div class="hm-chg" style="color:var(--cyan)">+0.9%</div></div>
+            <div class="hm-cell" style="background:rgba(255,184,48,.09)"><div class="hm-name">Financials</div><div class="hm-score" style="color:var(--amber)">63</div><div class="hm-chg" style="color:var(--amber)">+0.6%</div></div>
+            <div class="hm-cell" style="background:rgba(75,86,107,.14)"><div class="hm-name">Healthcare</div><div class="hm-score" style="color:var(--fog)">52</div><div class="hm-chg" style="color:var(--fog)">−0.1%</div></div>
+            <div class="hm-cell" style="background:rgba(75,86,107,.1)"><div class="hm-name">Consumer</div><div class="hm-score" style="color:var(--fog)">48</div><div class="hm-chg" style="color:var(--fog)">−0.3%</div></div>
+            <div class="hm-cell" style="background:rgba(255,79,109,.09)"><div class="hm-name">Utilities</div><div class="hm-score" style="color:var(--rose)">41</div><div class="hm-chg" style="color:var(--rose)">−0.8%</div></div>
+            <div class="hm-cell" style="background:rgba(255,79,109,.13)"><div class="hm-name">Real Estate</div><div class="hm-score" style="color:var(--rose)">34</div><div class="hm-chg" style="color:var(--rose)">−1.8%</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="sh"><h2>News Sentiment</h2><span class="stag">Last 4h</span></div>
+          <div class="nf">
+            <div class="ni"><div class="ni-m"><span class="ni-s">Reuters</span><span class="ni-t">14:32</span><span class="ni-tag nt-b">Positive</span></div><div class="ni-hl">NVIDIA smashes AI chip demand forecasts, raises FY guidance by 18%</div><div class="ni-tks"><span class="ni-tk">$NVDA</span><span class="ni-tk">$AMD</span></div></div>
+            <div class="ni"><div class="ni-m"><span class="ni-s">Bloomberg</span><span class="ni-t">13:17</span><span class="ni-tag nt-n">Neutral</span></div><div class="ni-hl">Fed officials split on timeline for rate cuts amid sticky inflation data</div><div class="ni-tks"><span class="ni-tk">$SPY</span><span class="ni-tk">$TLT</span></div></div>
+            <div class="ni"><div class="ni-m"><span class="ni-s">WSJ</span><span class="ni-t">11:54</span><span class="ni-tag nt-r">Negative</span></div><div class="ni-hl">Tesla delivery miss raises Q2 demand concerns for third straight quarter</div><div class="ni-tks"><span class="ni-tk">$TSLA</span></div></div>
+            <div class="ni"><div class="ni-m"><span class="ni-s">CNBC</span><span class="ni-t">10:08</span><span class="ni-tag nt-b">Positive</span></div><div class="ni-hl">Microsoft Azure cloud growth accelerates to 31% — beats estimates</div><div class="ni-tks"><span class="ni-tk">$MSFT</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MACRO -->
+      <div class="sh"><h2>Macro Indicators</h2><span class="stag">Live</span></div>
+      <div class="mac-grid">
+        <div class="mc"><div class="mc-l">Fed Funds Rate</div><div class="mc-v" style="color:var(--amber)">5.25%</div><div class="mc-t tf">→ Hold expected</div></div>
+        <div class="mc"><div class="mc-l">CPI YoY</div><div class="mc-v" style="color:var(--amber)">3.2%</div><div class="mc-t td">↓ Declining</div></div>
+        <div class="mc"><div class="mc-l">10Y Yield</div><div class="mc-v" style="color:var(--rose)">4.62%</div><div class="mc-t tu">↑ Rising pressure</div></div>
+        <div class="mc"><div class="mc-l">USD Index</div><div class="mc-v" style="color:var(--snow)">104.3</div><div class="mc-t tf">→ Stable</div></div>
+        <div class="mc"><div class="mc-l">Jobless Claims</div><div class="mc-v" style="color:var(--lime)">212K</div><div class="mc-t td">↓ Below est.</div></div>
+        <div class="mc"><div class="mc-l">GDP Growth</div><div class="mc-v" style="color:var(--lime)">2.8%</div><div class="mc-t tu">↑ Beat 2.4%</div></div>
+      </div>
+
+      <div class="disc">PulseIQ is for informational purposes only · <strong style="color:rgba(255,255,255,.2)">Not financial advice</strong> · Data delayed 15 min via Yahoo Finance · Scores update every 15 min</div>
+    </div>
+
+    <!-- ═══ ACCURACY LOG ═══ -->
+    <div class="panel" id="panel-accuracy">
+      <div class="ak-row">
+        <div class="ak"><div class="ak-l">Full Hit Rate</div><div class="ak-v" style="color:var(--lime)">71%</div><div class="ak-s">Actual H+L inside range</div><div class="prog"><div class="pf" style="width:71%;background:var(--lime)"></div></div></div>
+        <div class="ak"><div class="ak-l">Partial Hit</div><div class="ak-v" style="color:var(--amber)">17%</div><div class="ak-s">One bound matched</div><div class="prog"><div class="pf" style="width:17%;background:var(--amber)"></div></div></div>
+        <div class="ak"><div class="ak-l">Miss Rate</div><div class="ak-v" style="color:var(--rose)">12%</div><div class="ak-s">Outside range entirely</div><div class="prog"><div class="pf" style="width:12%;background:var(--rose)"></div></div></div>
+        <div class="ak"><div class="ak-l">Avg Δ on Misses</div><div class="ak-v" style="color:var(--lav)">±1.8%</div><div class="ak-s">Mean deviation from edge</div><div class="spark" id="spark"></div></div>
+      </div>
+
+      <div class="leg-row">
+        <div class="leg"><div class="ld" style="background:var(--lime)"></div>Full Hit — both High & Low inside predicted range</div>
+        <div class="leg"><div class="ld" style="background:var(--amber)"></div>Partial — one side matched</div>
+        <div class="leg"><div class="ld" style="background:var(--rose)"></div>Miss — price entirely outside range</div>
+      </div>
+
+      <div class="af-row">
+        <div class="afp active" data-f="all">All</div>
+        <div class="afp" data-f="hit">Hits</div>
+        <div class="afp" data-f="partial">Partial</div>
+        <div class="afp" data-f="miss">Misses</div>
+        <input class="asrch" id="srch" placeholder="Ticker…">
+      </div>
+
+      <div class="atw">
+        <div class="ath"><span>Date</span><span>Ticker</span><span>Score</span><span>Predicted H/L</span><span>Actual H/L</span><span>Result</span><span>Accuracy</span></div>
+        <div id="arows">
+
+          <div class="atr" data-r="hit" data-tk="NVDA"><div class="ad">Feb 26</div><div><div class="at">NVDA</div><div class="ac">NVIDIA</div></div><div><span class="sn sh-sn">80</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $900 / L $868</span></div><div class="ahl"><div class="ah">H $897.40 ✓</div><div class="al">L $872.10 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.3% from H</div></div></div>
+
+          <div class="atr" data-r="hit" data-tk="MSFT"><div class="ad">Feb 26</div><div><div class="at">MSFT</div><div class="ac">Microsoft</div></div><div><span class="sn sh-sn">75</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $418 / L $405</span></div><div class="ahl"><div class="ah">H $416.80 ✓</div><div class="al">L $408.20 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.3% from H</div></div></div>
+
+          <div class="atr" data-r="partial" data-tk="AAPL"><div class="ad">Feb 26</div><div><div class="at">AAPL</div><div class="ac">Apple</div></div><div><span class="sn sm-sn">66</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $194 / L $187</span></div><div class="ahl"><div class="ah ah-m">H $195.60 ✗</div><div class="al">L $188.40 ✓</div></div><div class="rw"><div class="rd" style="background:var(--amber)"></div><span class="rl rp">Partial</span></div><div class="da"><div class="da-h" style="color:var(--amber)">H missed</div><div class="da-d">Δ +0.8% above H</div></div></div>
+
+          <div class="atr" data-r="miss" data-tk="TSLA"><div class="ad">Feb 26</div><div><div class="at">TSLA</div><div class="ac">Tesla</div></div><div><span class="sn sn-sn">52</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $210 / L $198</span></div><div class="ahl"><div class="ah ah-m">H $196.80 ✗</div><div class="al al-m">L $190.20 ✗</div></div><div class="rw"><div class="rd" style="background:var(--rose)"></div><span class="rl rm">Miss</span></div><div class="da"><div class="da-h" style="color:var(--rose)">Below range</div><div class="da-d">Δ −3.6% below L</div></div></div>
+
+          <div class="atr" data-r="hit" data-tk="SPY"><div class="ad">Feb 26</div><div><div class="at">SPY</div><div class="ac">S&P 500 ETF</div></div><div><span class="sn sm-sn">62</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $515 / L $506</span></div><div class="ahl"><div class="ah">H $513.60 ✓</div><div class="al">L $508.10 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.3% from H</div></div></div>
+
+          <div class="atr" data-r="hit" data-tk="NVDA"><div class="ad">Feb 25</div><div><div class="at">NVDA</div><div class="ac">NVIDIA</div></div><div><span class="sn sh-sn">78</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $882 / L $855</span></div><div class="ahl"><div class="ah">H $879.20 ✓</div><div class="al">L $861.50 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.3% from H</div></div></div>
+
+          <div class="atr" data-r="hit" data-tk="QQQ"><div class="ad">Feb 25</div><div><div class="at">QQQ</div><div class="ac">Nasdaq ETF</div></div><div><span class="sn sm-sn">70</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $446 / L $437</span></div><div class="ahl"><div class="ah">H $444.10 ✓</div><div class="al">L $438.90 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.4% from H</div></div></div>
+
+          <div class="atr" data-r="partial" data-tk="META"><div class="ad">Feb 25</div><div><div class="at">META</div><div class="ac">Meta</div></div><div><span class="sn sm-sn">64</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $516 / L $503</span></div><div class="ahl"><div class="ah">H $514.20 ✓</div><div class="al al-m">L $500.80 ✗</div></div><div class="rw"><div class="rd" style="background:var(--amber)"></div><span class="rl rp">Partial</span></div><div class="da"><div class="da-h" style="color:var(--amber)">L missed</div><div class="da-d">Δ −0.4% below L</div></div></div>
+
+          <div class="atr" data-r="miss" data-tk="META"><div class="ad">Feb 24</div><div><div class="at">META</div><div class="ac">Meta</div></div><div><span class="sn sm-sn">61</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $518 / L $503</span></div><div class="ahl"><div class="ah ah-m">H $498.70 ✗</div><div class="al al-m">L $491.20 ✗</div></div><div class="rw"><div class="rd" style="background:var(--rose)"></div><span class="rl rm">Miss</span></div><div class="da"><div class="da-h" style="color:var(--rose)">Below range</div><div class="da-d">Δ −4.1% below L</div></div></div>
+
+          <div class="atr" data-r="hit" data-tk="MSFT"><div class="ad">Feb 24</div><div><div class="at">MSFT</div><div class="ac">Microsoft</div></div><div><span class="sn sh-sn">73</span></div><div class="ahl"><span style="font-family:var(--mono);font-size:11px;color:var(--snow)">H $414 / L $401</span></div><div class="ahl"><div class="ah">H $412.50 ✓</div><div class="al">L $404.10 ✓</div></div><div class="rw"><div class="rd" style="background:var(--lime)"></div><span class="rl rh">Full Hit</span></div><div class="da"><div class="da-h" style="color:var(--lime)">Range ✓</div><div class="da-d">Δ −0.4% from H</div></div></div>
+
+        </div>
+      </div>
+      <div class="disc" style="margin-top:16px;">Accuracy tracked daily at market close · Predicted ranges generated pre-market from historical volatility + technical indicators · <strong style="color:rgba(255,255,255,.2)">Not financial advice</strong></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// Clock
+function tick(){
+  const s=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
+  document.getElementById('clock').textContent=s+' EST';
+}
+tick();setInterval(tick,1000);
+
+// Tab switching (both sidebar + top tabs stay in sync)
+function switchTab(name){
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+  document.querySelectorAll('.sb-item[data-tab]').forEach(i=>i.classList.toggle('active',i.dataset.tab===name));
+}
+document.querySelectorAll('.ptab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+document.querySelectorAll('.sb-item[data-tab]').forEach(i=>i.addEventListener('click',()=>switchTab(i.dataset.tab)));
+
+// Accuracy filters
+function applyFilter(r,s){
+  document.querySelectorAll('#arows .atr').forEach(row=>{
+    const rOk=r==='all'||row.dataset.r===r;
+    const sOk=!s||row.dataset.tk.includes(s.toUpperCase());
+    row.style.display=(rOk&&sOk)?'':'none';
+  });
+}
+document.querySelectorAll('.afp').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('.afp').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    applyFilter(p.dataset.f,document.getElementById('srch').value.trim());
+  });
+});
+document.getElementById('srch').addEventListener('input',function(){
+  applyFilter(document.querySelector('.afp.active').dataset.f,this.value.trim());
+});
+
+// Spark chart
+const sd=[5,6,4,7,6,5,7,8],sm=Math.max(...sd),sc=document.getElementById('spark');
+sd.forEach((v,i)=>{const b=document.createElement('div');b.className='sp-b';b.style.height=Math.round((v/sm)*100)+'%';b.style.background=v/sm>.7?'var(--lime)':v/sm>.5?'var(--amber)':'var(--rose)';b.style.opacity=(.5+i/sd.length*.5).toFixed(2);sc.appendChild(b);});
+</script>
+</body>
+</html>
